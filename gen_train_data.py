@@ -174,7 +174,7 @@ def main():
             roi_y2 = face_y2 + roi_resize_h
             if roi_y2 > cam_h: roi_y2 = cam_h
 
-            if DEBUG == True:
+            if DEBUG:
                 text_x1 = face_x1
                 text_y1 = face_y1 - 3
                 if text_y1 < 0: text_y1 = 0
@@ -187,7 +187,7 @@ def main():
                 gray_face = cv2.cvtColor(frame[face_y1:face_y2, face_x1:face_x2], cv2.COLOR_BGR2GRAY)
                 (left_eye, right_eye) = detect_eyes(gray_face, eye_cascade)
                     
-                if DEBUG == True:
+                if DEBUG:
                     for point in landmarks_2D:
                         cv2.circle(frame,( point[0], point[1] ), 2, (0,0,255), -1)
                 #Applying the PnP solver to find the 3D pose
@@ -224,7 +224,7 @@ def main():
                         captured_mouse_data.append((mx, my))
                         cv2.circle(frame, (10, 10), 5, (0, 0, 255), -1)
 
-        if DEBUG == True:
+        if DEBUG:
             text_x1 = roi_x1
             text_y1 = roi_y1 - 3
             if text_y1 < 0: text_y1 = 0
