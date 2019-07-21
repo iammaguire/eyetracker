@@ -18,7 +18,8 @@ def load_data():
     frame = pandas.read_csv("data/data.csv", header=None)
     data = frame.values
     X_scalar = data[:, 0:6]
-    Y = data[:, 6:]
+    X_scalar /= np.amax(X_scalar, axis=0)
+    Y = data[:, 6:] / (1920, 1080)
     img_folder = 'data/imgs'
     num_pairs = int(len([name for name in os.listdir(img_folder) if os.path.isfile(os.path.join(img_folder, name))]) / 2)
     X_cnn_left = [0]*num_pairs
@@ -35,9 +36,7 @@ def load_data():
                 X_cnn_right[idx] = img
             else:
                 quit_with("Non compliant image: " + fname)
-            
-    print(np.array(X_cnn_right)[0])
-    return X_scalar, X_cnn_left, X_cnn_right, Y
+    return np.array(X_scalar), np.array(X_cnn_left), np.array(X_cnn_right), np.array(Y)
 
 def build_convnet(input_conv):
     convnet = Conv2D(32, kernel_size=3, activation='relu', input_shape=(32, 32, 1))(input_conv)
@@ -47,12 +46,12 @@ def build_convnet(input_conv):
     convnet = Flatten()(convnet)
     convnet = Dense(512, activation='relu')(convnet)
     convnet = Dropout(0.5)(convnet)
-    convnet = Dense(32, activation='relu')(convnet) # balance with densenet
+    convnet = Dense(128, activation='relu')(convnet) # balance with densenet
     return Model(inputs=input_conv, outputs=convnet)
 
 def build_densenet(input_dense):
-    densenet = Dense(12, activation='relu')(input_dense)
-    densenet = Dense(8, activation='relu')(densenet)
+    densenet = Dense(64, activation='relu')(input_dense)
+    densenet = Dense(32, activation='relu')(densenet)
     return Model(inputs=input_dense, outputs=densenet)
 
 def build_model():
@@ -63,6 +62,7 @@ def build_model():
     convnet_right = build_convnet(input_conv_right)
     densenet = build_densenet(input_dense)
     model = concatenate([convnet_left.output, convnet_right.output, densenet.output])
+    model = Dense(16, activation='relu')(model)
     model = Dense(4, activation='relu')(model)
     model = Dense(2, activation='linear')(model)
     model = Model(inputs=[convnet_left.input, convnet_right.input, densenet.input], outputs=model)
@@ -70,11 +70,23 @@ def build_model():
 
 def main():
     X_scalar, X_cnn_left, X_cnn_right, Y = load_data()
+    X_scalar_train, X_scalar_test, X_cnn_left_train, X_cnn_left_test, X_cnn_right_train, X_cnn_right_test, Y_train, Y_test = train_test_split(X_scalar, X_cnn_left, X_cnn_right, Y, test_size=0.25)
+    X_cnn_left_train = np.expand_dims(X_cnn_left_train, axis=3)
+    X_cnn_right_train = np.expand_dims(X_cnn_right_train, axis=3)
+    X_cnn_left_test = np.expand_dims(X_cnn_left_test, axis=3)
+    X_cnn_right_test = np.expand_dims(X_cnn_right_test, axis=3)
     model = build_model()
-    opt = Adam(lr=1e-3, decay=1e-3 / 200)
-    model.compile(loss='mean_absolute_percentage_error', optimizer=opt)
-    print("Successfully compiled model.")
-    
+    opt = Adam(lr=1e-4, decay=1e-4 / 200)
+    model.compile(loss='mean_squared_error', optimizer=opt)
+    print("Successfully compiled model, begin training.")
+    model.fit([X_cnn_left_train, X_cnn_right_train, X_scalar_train], Y_train, 
+                validation_data=([X_cnn_left_test, X_cnn_right_test, X_scalar_test], Y_test),
+                epochs=50, batch_size=10, validation_split=0.4)
+    print("Finished training, making prediction.")
+    print("Predicted:")
+    print(model.predict([X_cnn_left_test, X_cnn_right_test, X_scalar_test])[5:])
+    print("Actual:")
+    print(Y_test[5:])
 
 if __name__ == "__main__":
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)

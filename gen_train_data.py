@@ -250,6 +250,8 @@ def main():
                     file.write(str(rvec[0][0])+','+str(rvec[1][0])+','+str(rvec[2][0])+','+str(tvec[0][0])+','+str(tvec[1][0])+','+str(tvec[2][0])+','+str(mx)+','+str(my))
                     file.write('\n')
             captured_eye_data.clear()
+            captured_mouse_data.clear()
+            captured_head_data.clear()
         if key == ord('q'): break
    
     video_capture.release()
