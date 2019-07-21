@@ -6,7 +6,7 @@ from Xlib import display
 from deepgaze.haar_cascade import haarCascade
 from deepgaze.face_landmark_detection import faceLandmarkDetection
 
-DEBUG = False
+DEBUG = True
 
 P3D_RIGHT_SIDE = numpy.float32([-100.0, -77.5, -5.0]) #0
 P3D_GONION_RIGHT = numpy.float32([-110.0, -77.5, -85.0]) #4
@@ -34,6 +34,7 @@ def mouse_pos():
 def detect_eyes(gray_img, eye_cascade):
     left_eye = None
     right_eye = None
+    crop = 5
     eyes = eye_cascade.detectMultiScale(gray_img, 1.1, 5)
     height = numpy.size(gray_img, 0)
     width = numpy.size(gray_img, 1)
@@ -42,9 +43,9 @@ def detect_eyes(gray_img, eye_cascade):
             pass
         center = x + w / 2
         if center < width * 0.5:
-            left_eye = gray_img[y:y + h, x:x + w]
+            left_eye = gray_img[y+crop:y+h-crop, x+crop:x+w-crop]
         else:
-            right_eye = gray_img[y:y + h, x:x + w]
+            right_eye = gray_img[y+crop:y+h-crop, x+crop:x+w-crop]
     return left_eye, right_eye
 
 def main():
@@ -246,7 +247,7 @@ def main():
             with open('data/data.csv', 'a') as file:
                 for idx, (mx, my) in enumerate(captured_mouse_data):
                     (rvec, tvec) = captured_head_data[idx]
-                    file.write(str(rvec[0][0])+','+str(rvec[1][0])+','+str(rvec[2][0])+'/'+str(tvec[0][0])+','+str(tvec[1][0])+','+str(tvec[2][0])+' '+str(mx)+','+str(my))
+                    file.write(str(rvec[0][0])+','+str(rvec[1][0])+','+str(rvec[2][0])+','+str(tvec[0][0])+','+str(tvec[1][0])+','+str(tvec[2][0])+','+str(mx)+','+str(my))
                     file.write('\n')
             captured_eye_data.clear()
         if key == ord('q'): break
