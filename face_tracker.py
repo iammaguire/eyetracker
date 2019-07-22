@@ -167,12 +167,12 @@ class FaceTracker:
         left_eye = None
         right_eye = None
         crop = 5
-        eyes = self.eye_cascade.detectMultiScale(gray_img, 1.1, 5)
+        eyes = self.eye_cascade.detectMultiScale(gray_img, 1.07, 5)
         height = np.size(gray_img, 0)
         width = np.size(gray_img, 1)
         for (x, y, w, h) in eyes:
-            if y + h > height / 2: # if detected eye is in bottom half of image
-                pass
+            if y + h > height / 1.75: # if detected eye is in bottom half of image
+                continue
             center = x + w / 2
             if center < width * 0.5:
                 left_eye = gray_img[y+crop:y+h-crop, x+crop:x+w-crop]

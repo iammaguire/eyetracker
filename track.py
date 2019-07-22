@@ -19,8 +19,8 @@ def main():
         if tracker.face_type > 0:
             if tracker.left_eye is not None and tracker.right_eye is not None and tracker.rvec is not None and tracker.tvec is not None:
                 X_scalar = np.concatenate((tracker.rvec, tracker.tvec)).flatten() / normaliser
-                left = np.expand_dims(tracker.left_eye, axis=3)
-                right = np.expand_dims(tracker.right_eye, axis=3)
+                left = np.expand_dims(tracker.left_eye, axis=3)  / 255.0
+                right = np.expand_dims(tracker.right_eye, axis=3)  / 255.0
                 pred = model.predict([[left], [right], [X_scalar]])
                 print(pred)
                 x = clamp(pred[0][0]*1920, 0, 1920)
@@ -28,7 +28,7 @@ def main():
                 #print(str(x) + " : " + str(y))
                 if pred is not None:
                     pyautogui.moveTo(x, y)
-        cv2.imshow('Video', frame)
+        #cv2.imshow('Video', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'): break
 
 if __name__ == "__main__":

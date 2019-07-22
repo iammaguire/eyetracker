@@ -5,9 +5,9 @@ import pandas
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from keras.models import Model
+from keras.models import Model, load_model
 from keras.optimizers import Adam
-from keras.layers import Input, Dense, Conv2D, Flatten, MaxPooling2D, Dropout, Activation, concatenate
+from keras.layers import Input, Dense, Conv2D, Flatten, MaxPooling2D, Dropout, Activation, BatchNormalization, concatenate
 from sklearn.model_selection import train_test_split
 
 def quit_with(err):
@@ -43,7 +43,9 @@ def load_data(imgs=True):
         return np.array(X_scalar), np.array(Y)
 
 def build_convnet(input_conv):
-    convnet = Conv2D(32, kernel_size=3, activation='relu', input_shape=(32, 32, 1))(input_conv)
+    convnet = Conv2D(32, use_bias=False, kernel_size=3, input_shape=(32, 32, 1))(input_conv)
+    convnet = BatchNormalization()(convnet)
+    convnet = Activation("relu")(convnet)
     convnet = Conv2D(32, kernel_size=3, activation='relu')(convnet)
     convnet = MaxPooling2D(pool_size=(2, 2))(convnet)
     convnet = Conv2D(64, kernel_size=3, activation='relu')(convnet)
@@ -52,10 +54,13 @@ def build_convnet(input_conv):
     convnet = Dropout(0.5)(convnet)
     convnet = Dense(128, activation='relu')(convnet) # balance with densenet
     convnet = Dense(64, activation='relu')(convnet) # balance with densenet
+    convnet = Dropout(0.5)(convnet)
     return Model(inputs=input_conv, outputs=convnet)
 
 def build_densenet(input_dense):
     densenet = Dense(64, activation='relu')(input_dense)
+    densenet = Dense(32, activation='relu')(densenet)
+    densenet = Dropout(0.5)(densenet)
     densenet = Dense(32, activation='relu')(densenet)
     return Model(inputs=input_dense, outputs=densenet)
 
@@ -73,29 +78,26 @@ def build_model():
     model = Model(inputs=[convnet_left.input, convnet_right.input, densenet.input], outputs=model)
     return model
 
-def main():
+def main(preload_model=False):
     X_scalar, X_cnn_left, X_cnn_right, Y = load_data()
     X_scalar_train, X_scalar_test, X_cnn_left_train, X_cnn_left_test, X_cnn_right_train, X_cnn_right_test, Y_train, Y_test = train_test_split(X_scalar, X_cnn_left, X_cnn_right, Y, test_size=0.25)
     X_cnn_left_train = np.expand_dims(X_cnn_left_train, axis=3)
     X_cnn_right_train = np.expand_dims(X_cnn_right_train, axis=3)
     X_cnn_left_test = np.expand_dims(X_cnn_left_test, axis=3)
     X_cnn_right_test = np.expand_dims(X_cnn_right_test, axis=3)
-    print(X_scalar_train.shape)
-    model = build_model()
+    model = load_model('data/model.hdf5') if preload_model else build_model()
     opt = Adam(lr=1e-4, decay=1e-4 / 200)
-    model.compile(loss='mean_squared_error', optimizer=opt)
+    model.compile(loss='mean_squared_error', optimizer=opt, metrics=['mae', 'acc'])
     print("Successfully compiled model, begin training.")
-    model.fit([X_cnn_left_train, X_cnn_right_train, X_scalar_train], Y_train, 
-                validation_data=([X_cnn_left_test, X_cnn_right_test, X_scalar_test], Y_test),
-                epochs=50, batch_size=32, validation_split=0.4)
-    print("Finished training, making prediction.")
-    print("Predicted:")
-    print(model.predict([X_cnn_left_test, X_cnn_right_test, X_scalar_test])[5:])
-    print("Actual:")
-    print(Y_test[5:])
+    model.fit([X_cnn_left_train, X_cnn_right_train, X_scalar_train], Y_train,
+                #validation_data=([X_cnn_left_test, X_cnn_right_test, X_scalar_test], Y_test),
+                epochs=50, batch_size=64)
+    print("Finished training, evaluating.")
+    results = model.evaluate([X_cnn_left_test, X_cnn_right_test, X_scalar_test], Y_test, batch_size=64)
+    print("Test loss, acc: ", results)
     print("Dumping weights to disk.")
     model.save('data/model.hdf5')
 
 if __name__ == "__main__":
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-    main()
+    main(input("Load weights [y/n] ") == 'y')

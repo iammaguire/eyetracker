@@ -11,6 +11,21 @@ def mouse_pos():
     data = display.Display().screen().root.query_pointer()._data
     return data["root_x"], data["root_y"]
 
+def add_gaussian_noise(X_imgs): # augmentation
+    gaussian_noise_imgs = []
+    row, col = X_imgs[0].shape
+    mean = 0
+    var = 0.1
+    sigma = var ** 0.5
+    
+    for X_img in X_imgs:
+        X_img = X_img.astype(np.float32)
+        gaussian = np.random.random((row, col)).astype(np.float32)
+        gaussian_img = cv2.addWeighted(X_img, 0.75, 0.25 * gaussian, 0.25, 0)
+        gaussian_noise_imgs.append(gaussian_img)
+    gaussian_noise_imgs = np.array(gaussian_noise_imgs, dtype = np.float32)
+    return gaussian_noise_imgs
+
 def main():
     tracker = FaceTracker()    
     capturing = False
@@ -61,13 +76,19 @@ def main():
         if key == ord('w'):
             num_existing_pairs = len(os.listdir('./data/imgs/')) / 2
             for idx, (left, right) in enumerate(captured_eye_data):
-                cv2.imwrite('data/imgs/'+str(int(idx+num_existing_pairs))+'l.png', left)
-                cv2.imwrite('data/imgs/'+str(int(idx+num_existing_pairs))+'r.png', right)
+                (left_gauss, right_gauss) = add_gaussian_noise([left, right])
+                cv2.imwrite('data/imgs/'+str(int((idx*2+1)+num_existing_pairs))+'l.png', left_gauss)
+                cv2.imwrite('data/imgs/'+str(int((idx*2+1)+num_existing_pairs))+'r.png', right_gauss)
+                cv2.imwrite('data/imgs/'+str(int((idx*2)+num_existing_pairs))+'l.png', left)
+                cv2.imwrite('data/imgs/'+str(int((idx*2)+num_existing_pairs))+'r.png', right)
             with open('data/data.csv', 'a') as file:
                 for idx, (mx, my) in enumerate(captured_mouse_data):
                     (rvec, tvec) = captured_head_data[idx]
                     file.write(str(rvec[0][0])+','+str(rvec[1][0])+','+str(rvec[2][0])+','+str(tvec[0][0])+','+str(tvec[1][0])+','+str(tvec[2][0])+','+str(mx)+','+str(my))
                     file.write('\n')
+                    file.write(str(rvec[0][0])+','+str(rvec[1][0])+','+str(rvec[2][0])+','+str(tvec[0][0])+','+str(tvec[1][0])+','+str(tvec[2][0])+','+str(mx)+','+str(my)) # write twice due to gauss augmentation
+                    file.write('\n')
+            print("Wrote " + str(len(captured_eye_data ) * 2) + " data points to disk.")
             captured_eye_data.clear()
             captured_mouse_data.clear()
             captured_head_data.clear()
@@ -75,3 +96,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# 1763r.png <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<,
