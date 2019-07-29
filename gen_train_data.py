@@ -77,10 +77,10 @@ def main():
             num_existing_pairs = len(os.listdir('./data/imgs/')) / 2
             for idx, (left, right) in enumerate(captured_eye_data):
                 (left_gauss, right_gauss) = add_gaussian_noise([left, right])
-                cv2.imwrite('data/imgs/'+str(int((idx*2+1)+num_existing_pairs))+'l.png', left_gauss)
-                cv2.imwrite('data/imgs/'+str(int((idx*2+1)+num_existing_pairs))+'r.png', right_gauss)
-                cv2.imwrite('data/imgs/'+str(int((idx*2)+num_existing_pairs))+'l.png', left)
-                cv2.imwrite('data/imgs/'+str(int((idx*2)+num_existing_pairs))+'r.png', right)
+                cv2.imwrite('data/imgs/l/'+str(int((idx*2+1)+num_existing_pairs))+'.png', left_gauss)
+                cv2.imwrite('data/imgs/r/'+str(int((idx*2+1)+num_existing_pairs))+'.png', right_gauss)
+                cv2.imwrite('data/imgs/l/'+str(int((idx*2)+num_existing_pairs))+'.png', left)
+                cv2.imwrite('data/imgs/r/'+str(int((idx*2)+num_existing_pairs))+'.png', right)
             with open('data/data.csv', 'a') as file:
                 for idx, (mx, my) in enumerate(captured_mouse_data):
                     (rvec, tvec) = captured_head_data[idx]
