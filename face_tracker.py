@@ -27,6 +27,7 @@ class FaceTracker:
         self.video_capture = cv2.VideoCapture(0)
         self.cam_w = int(self.video_capture.get(3))
         self.cam_h = int(self.video_capture.get(4))
+        self.blinked = False  
         #Defining the camera matrix.
         #To have better result it is necessary to find the focal
         # lenght of the camera. fx/fy are the focal lengths (in pixels) 
@@ -77,6 +78,7 @@ class FaceTracker:
         self.roi_resize_w = int(self.cam_w/10)
         self.roi_resize_h = int(self.cam_h/10)
         self.face_type = -1
+        self.no_eye_counter = 0
     
     def tick(self):
         ret, frame = self.video_capture.read()
@@ -151,6 +153,13 @@ class FaceTracker:
             if self.left_eye is not None and self.right_eye is not None:
                 self.right_eye = cv2.resize(self.right_eye, dsize=(32,32), interpolation=cv2.INTER_CUBIC)
                 self.left_eye = cv2.resize(self.left_eye, dsize=(32,32), interpolation=cv2.INTER_CUBIC)
+            else:
+                self.no_eye_counter += 1
+            if self.no_eye_counter >= 25:
+                self.blinked = True
+                self.no_eye_counter = 0
+            else:
+                self.blinked = False
             #Applying the PnP solver to find the 3D pose
             # of the head from the 2D position of the
             # landmarks.

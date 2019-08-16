@@ -57,7 +57,7 @@ def update(cam):
     face_cascade.findFace(gray_img, True, True, True, True, 1.10, 1.10, 1.15, 1.15, 40, 40, rotationAngleCCW=30, rotationAngleCW=-30, lastFaceType=face_cascade.face_type)
     
     if face_cascade/face_type == 0:
-        no_face_counter++
+        no_face_counter += 1
     if no_face_counter >= 50:
         no_face_counter = 0
         roi_x0 = 0

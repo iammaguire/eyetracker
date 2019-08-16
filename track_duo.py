@@ -7,6 +7,7 @@ from keras import backend as K
 from keras.models import load_model
 from train_tracker import load_data
 from face_tracker import FaceTracker
+from collections import deque
 
 def main():
     x_model = load_model('data/x_model.hdf5')
@@ -15,9 +16,13 @@ def main():
     normaliser = np.amax(X_scalar, axis=0)
     tracker = FaceTracker()
     clamp = lambda n, minn, maxn: max(min(maxn, n), minn)
+    last_x = deque([None]*3)
+    last_y = deque([None]*3)
     while True:    
         frame = tracker.tick()
         if tracker.face_type > 0:
+            if tracker.blinked:
+                pyautogui.click()
             if tracker.left_eye is not None and tracker.right_eye is not None and tracker.rvec is not None and tracker.tvec is not None:
                 X_scalar = np.concatenate((tracker.rvec, tracker.tvec)).flatten() / normaliser
                 left = np.expand_dims(tracker.left_eye, axis=3)  / 255.0
@@ -26,8 +31,12 @@ def main():
                 y_pred = y_model.predict([[left], [right], [X_scalar]])
                 x = clamp(x_pred[0]*1920, 0, 1920)
                 y = clamp(y_pred[0]*1080, 0, 1080)
-                if x_pred is not None and y_pred is not None:
-                    pyautogui.moveTo(x, y)
+                last_x[next((i for i, v in enumerate(last_x) if v is None), -1) if None in last_x else 0] = x
+                last_y[next((i for i, v in enumerate(last_y) if v is None), -1) if None in last_y else 0] = y
+                if None not in last_x: last_x.rotate(1)
+                if None not in last_y: last_y.rotate(1)
+                if x_pred is not None and y_pred is not None and None not in last_x and None not in last_y:
+                    pyautogui.moveTo(sum(last_x) / len(last_x), sum(last_y) / len(last_y))
         if cv2.waitKey(1) & 0xFF == ord('q'): break
 
 if __name__ == "__main__":
