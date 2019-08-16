@@ -16,7 +16,7 @@ def main():
     captured_eye_data = []
     captured_head_data = []
     captured_mouse_data = []
-    aoi_size = 256
+    aoi_size = 512
     aoi_x = random.randrange(0, 1920-aoi_size)
     aoi_y = random.randrange(0, 1080-aoi_size)
     follow_x = random.randrange(aoi_x, aoi_x + aoi_size)
@@ -38,8 +38,8 @@ def main():
             follow_y = random.randrange(aoi_y, aoi_y + aoi_size)
             x_cond = follow_x > aoi_x + aoi_size / 2
             y_cond = follow_y > aoi_y + aoi_size / 2
-            follow_dx = random.randrange(-5.0, -2.0) if x_cond else random.randrange(2.0, 5.0)
-            follow_dy = random.randrange(-5.0, -2.0) if y_cond else random.randrange(2.0, 5.0)
+            follow_dx = random.randrange(-9.0, -1.0) if x_cond else random.randrange(1.0, 9.0)
+            follow_dy = random.randrange(-9.0, -1.0) if y_cond else random.randrange(1.0, 9.0)
             cv2.circle(img, (int(follow_x), int(follow_y)), 12, (0, 255, 0), -1)
             cv2.line(img, (int(follow_x), int(follow_y)), (int(follow_x + follow_dx * 10), int(follow_y + follow_dy * 10)), (0, 255, 0), 1)
             pause = True
@@ -95,29 +95,35 @@ def main():
         cv2.waitKey(1)
         if pause:
             pause = False
-            while cv2.waitKey(1) & 0xFF != ord('c'): _=0
-        '''if key == ord('c'):
-            break
-        elif key == ord('w'):
-            num_existing_pairs = len(os.listdir('./data/imgs/')) / 2
-            for idx, (left, right) in enumerate(captured_eye_data):
-                (left_gauss, right_gauss) = add_gaussian_noise([left, right])
-                cv2.imwrite('data/imgs/l/'+str(int((idx*2+1)+num_existing_pairs))+'.png', left_gauss)
-                cv2.imwrite('data/imgs/r/'+str(int((idx*2+1)+num_existing_pairs))+'.png', right_gauss)
-                cv2.imwrite('data/imgs/l/'+str(int((idx*2)+num_existing_pairs))+'.png', left)
-                cv2.imwrite('data/imgs/r/'+str(int((idx*2)+num_existing_pairs))+'.png', right)
-            with open('data/data.csv', 'a') as file:
-                for idx, (mx, my) in enumerate(captured_mouse_data):
-                    (rvec, tvec) = captured_head_data[idx]
-                    file.write(str(rvec[0][0])+','+str(rvec[1][0])+','+str(rvec[2][0])+','+str(tvec[0][0])+','+str(tvec[1][0])+','+str(tvec[2][0])+','+str(mx)+','+str(my))
-                    file.write('\n')
-                    file.write(str(rvec[0][0])+','+str(rvec[1][0])+','+str(rvec[2][0])+','+str(tvec[0][0])+','+str(tvec[1][0])+','+str(tvec[2][0])+','+str(mx)+','+str(my)) # write twice due to gauss augmentation
-                    file.write('\n')
-            print("Wrote " + str(len(captured_eye_data ) * 2) + " data points to disk.")
-            captured_eye_data.clear()
-            captured_mouse_data.clear()
-            captured_head_data.clear()
-        elif key == ord('q'): break'''
+            while True:
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord('c'):
+                    break
+                elif key == ord('w'):
+                    num_existing_pairs = len(os.listdir('./data/imgs/r'))
+                    if len(captured_mouse_data) != len(captured_head_data) or len(captured_mouse_data) != len(captured_eye_data):
+                        print("Differing array sizes.")
+                        sys.exit(0)
+                    for idx, (left, right) in enumerate(captured_eye_data):
+                        (left_gauss, right_gauss) = add_gaussian_noise([left, right])
+                        cv2.imwrite('data/imgs/l/'+str(int((idx*2+1)+num_existing_pairs))+'.png', left_gauss)
+                        cv2.imwrite('data/imgs/r/'+str(int((idx*2+1)+num_existing_pairs))+'.png', right_gauss)
+                        cv2.imwrite('data/imgs/l/'+str(int((idx*2)+num_existing_pairs))+'.png', left)
+                        cv2.imwrite('data/imgs/r/'+str(int((idx*2)+num_existing_pairs))+'.png', right)
+                    with open('data/data.csv', 'a') as file:
+                        for idx, (mx, my) in enumerate(captured_mouse_data):
+                            (rvec, tvec) = captured_head_data[idx]
+                            file.write(str(rvec[0][0])+','+str(rvec[1][0])+','+str(rvec[2][0])+','+str(tvec[0][0])+','+str(tvec[1][0])+','+str(tvec[2][0])+','+str(mx)+','+str(my))
+                            file.write('\n')
+                            file.write(str(rvec[0][0])+','+str(rvec[1][0])+','+str(rvec[2][0])+','+str(tvec[0][0])+','+str(tvec[1][0])+','+str(tvec[2][0])+','+str(mx)+','+str(my)) # write twice due to gauss augmentation
+                            file.write('\n')
+                    print("Wrote " + str(len(captured_eye_data ) * 2) + " data points to disk.")
+                    captured_eye_data.clear()
+                    captured_mouse_data.clear()
+                    captured_head_data.clear()
+                    sys.exit(0)
+                elif key == ord('q'):
+                    sys.exit(0)
 
 if __name__ == "__main__":
     main()
