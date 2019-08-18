@@ -26,7 +26,7 @@ def load_data_batch(to_load):
     last = pair_idx if pair_idx < num_pairs else num_pairs - 1
     X_scalar = np.expand_dims(frame.values[first:last, 0:6], axis=1)
     Y = frame.values[first:last, 6:] / (1920, 1080)
-    X_scalar /= np.amax(X_scalar, axis=0)
+    X_scalar /= X_scalar.max(axis=0)
     X_cnn_left = [0]*to_load
     X_cnn_right = [0]*to_load
     for fname in os.listdir(img_folder + 'l/'):
@@ -34,6 +34,8 @@ def load_data_batch(to_load):
         if idx < last and idx >= first:
             l_img = np.expand_dims(np.expand_dims(cv2.imread(os.path.join(img_folder + 'l/', fname), cv2.IMREAD_GRAYSCALE) / 255.0, axis=0), axis=3)
             r_img = np.expand_dims(np.expand_dims(cv2.imread(os.path.join(img_folder + 'r/', fname), cv2.IMREAD_GRAYSCALE) / 255.0, axis=0), axis=3)
+            l_img = l_img - np.mean(l_img, axis=0)
+            r_img = r_img - np.mean(r_img, axis=0)
             if l_img is None or r_img is None:
                 print("Error loading image data.")
                 sys.exit()
@@ -104,7 +106,6 @@ def build_model():
     model = Dense(1, activation='linear')(model)
     model = Model(inputs=[convnet_left.input, convnet_right.input, densenet.input], outputs=model)
     return model
-    
 
 def train_model(model):
     global num_pairs

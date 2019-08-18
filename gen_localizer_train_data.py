@@ -21,8 +21,8 @@ def main():
     aoi_y = random.randrange(0, 1080-aoi_size)
     follow_x = random.randrange(aoi_x, aoi_x + aoi_size)
     follow_y = random.randrange(aoi_y, aoi_y + aoi_size)
-    follow_dx = 2.2
-    follow_dy = 0.4
+    follow_dx = 0.0
+    follow_dy = 0.0
     pause = True
     first = True
 
@@ -31,7 +31,7 @@ def main():
         follow_y += follow_dy
         
         img = np.ones((1080, 1920, 3), np.uint8) * 255
-        if follow_x > aoi_x + aoi_size or follow_x < aoi_x or follow_y > aoi_y + aoi_size or follow_y < aoi_y:
+        if follow_x > aoi_x + aoi_size or follow_x < aoi_x or follow_y > aoi_y + aoi_size or follow_y < aoi_y or first:
             aoi_x = random.randrange(0, 1920-aoi_size)
             aoi_y = random.randrange(0, 1080-aoi_size)
             follow_x = random.randrange(aoi_x, aoi_x + aoi_size)

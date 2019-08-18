@@ -3,11 +3,12 @@ import keras
 import pyautogui
 import numpy as np
 import tensorflow as tf
+from collections import deque
 from keras import backend as K
 from keras.models import load_model
 from train_tracker import load_data
 from face_tracker import FaceTracker
-from collections import deque
+from detect_blink import BlinkDetector
 
 def main():
     x_model = load_model('data/x_model.hdf5')
@@ -15,6 +16,7 @@ def main():
     X_scalar, Y = load_data(False)
     normaliser = np.amax(X_scalar, axis=0)
     tracker = FaceTracker()
+    blink_detector = BlinkDetector()
     clamp = lambda n, minn, maxn: max(min(maxn, n), minn)
     last_x = deque([None]*3)
     last_y = deque([None]*3)
@@ -24,6 +26,9 @@ def main():
             if tracker.blinked:
                 pyautogui.click()
             if tracker.left_eye is not None and tracker.right_eye is not None and tracker.rvec is not None and tracker.tvec is not None:
+                (blink_l, blink_r) = blink_detector.detect(tracker.left_eye, tracker.right_eye)
+                print(str(blink_l) + " : " + str(blink_r))
+            
                 X_scalar = np.concatenate((tracker.rvec, tracker.tvec)).flatten() / normaliser
                 left = np.expand_dims(tracker.left_eye, axis=3)  / 255.0
                 right = np.expand_dims(tracker.right_eye, axis=3)  / 255.0
